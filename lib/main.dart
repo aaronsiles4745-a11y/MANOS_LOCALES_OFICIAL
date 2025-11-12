@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/admin_screen.dart';
+import 'screens/discover_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,7 +35,9 @@ class MyApp extends StatelessWidget {
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
       routes: {
         '/admin': (context) => const AdminScreen(),
+        '/discover': (context) => const DiscoverScreen(),
       },
+      // En routes:
     );
   }
 }
