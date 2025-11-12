@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/initialize_all.dart';
 
 class AdminScreen extends StatefulWidget {
-  const AdminScreen({Key? key}) : super(key: key);
+  const AdminScreen({super.key});
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();

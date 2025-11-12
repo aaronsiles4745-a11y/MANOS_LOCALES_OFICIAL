@@ -98,22 +98,22 @@ class ServiceModel {
     DateTime? updatedAt,
   }) {
     return ServiceModel(
-      serviceId: this.serviceId,
+      serviceId: serviceId,
       title: title ?? this.title,
       category: category ?? this.category,
       description: description ?? this.description,
       price: price ?? this.price,
       priceText: priceText ?? this.priceText,
       photoUrl: photoUrl ?? this.photoUrl,
-      providerId: this.providerId,
-      providerName: this.providerName,
-      providerPhone: this.providerPhone,
-      providerPhotoUrl: this.providerPhotoUrl,
+      providerId: providerId,
+      providerName: providerName,
+      providerPhone: providerPhone,
+      providerPhotoUrl: providerPhotoUrl,
       locationText: locationText ?? this.locationText,
       ratingAvg: ratingAvg ?? this.ratingAvg,
       ratingCount: ratingCount ?? this.ratingCount,
       active: active ?? this.active,
-      createdAt: this.createdAt,
+      createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

@@ -18,7 +18,7 @@ class SearchService {
           .where('active', isEqualTo: true)
           .orderBy('title')
           .startAt([lowerQuery])
-          .endAt([lowerQuery + '\uf8ff'])
+          .endAt(['$lowerQuery\uf8ff'])
           .limit(20)
           .get();
 

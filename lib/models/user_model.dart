@@ -120,7 +120,7 @@ class UserModel {
     bool? active,
   }) {
     return UserModel(
-      userId: this.userId,
+      userId: userId,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -133,7 +133,7 @@ class UserModel {
       role: role ?? this.role,
       ratingAvg: ratingAvg ?? this.ratingAvg,
       ratingCount: ratingCount ?? this.ratingCount,
-      createdAt: this.createdAt,
+      createdAt: createdAt,
       active: active ?? this.active,
     );
   }
