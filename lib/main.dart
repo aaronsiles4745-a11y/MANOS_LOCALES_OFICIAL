@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/auth_service.dart';
-import '../services/user_service.dart';
-import '../models/user_model.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -53,8 +50,7 @@ class Onboarding2Screen extends StatelessWidget {
     return _OnboardingBase(
       image: 'assets/images/inicio2.png',
       title: 'Conectá con servicios confiables cerca tuyo',
-      subtitle:
-      'Visualizá perfiles, valoraciones y experiencia para elegir mejor.',
+      subtitle: 'Visualizá perfiles, valoraciones y experiencia para elegir mejor.',
       activeIndex: 1,
       onNext: () => Navigator.pushNamed(context, '/onboarding3'),
       onBack: () => Navigator.pop(context),
@@ -71,11 +67,9 @@ class Onboarding3Screen extends StatelessWidget {
     return _OnboardingBase(
       image: 'assets/images/inicio3.png',
       title: 'Empezá a usar la app y resolvé todo desde un solo lugar',
-      subtitle:
-      'Registrate o iniciá sesión para acceder a todos los beneficios.',
+      subtitle: 'Registrate o iniciá sesión para acceder a todos los beneficios.',
       activeIndex: 2,
-      onNext: () =>
-          Navigator.pushReplacementNamed(context, '/login'), // Ir al login
+      onNext: () => Navigator.pushReplacementNamed(context, '/login'), // Ir al login
       onBack: () => Navigator.pop(context),
     );
   }
@@ -104,7 +98,6 @@ class _OnboardingBase extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Fondo con degradado + patrón
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -114,28 +107,20 @@ class _OnboardingBase extends StatelessWidget {
               ),
             ),
           ),
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/background_pattern.png',
-              fit: BoxFit.cover,
-              opacity: const AlwaysStoppedAnimation(0.08),
-            ),
-          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      height: 40,
-                      color: Colors.white,
-                    ),
+                  // Logo de la app
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 80,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 60),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 24),
+                  // Imagen principal
                   Image.asset(image, height: 240),
                   const SizedBox(height: 24),
                   Text(
@@ -154,48 +139,36 @@ class _OnboardingBase extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
                   const Spacer(),
-                  _buildPaginationRow(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (onBack != null)
+                        _circleButton(Icons.arrow_back, onBack!)
+                      else
+                        const SizedBox(width: 48),
+                      Row(
+                        children: List.generate(3, (i) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: i == activeIndex ? const Color(0xFF5B6BFF) : Colors.white24,
+                            ),
+                          );
+                        }),
+                      ),
+                      _circleButton(
+                          activeIndex == 2 ? Icons.check : Icons.arrow_forward, onNext!),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPaginationRow(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Botón atrás (solo si no es el primero)
-        if (onBack != null)
-          _circleButton(Icons.arrow_back, onBack!)
-        else
-          const SizedBox(width: 48),
-
-        // Indicadores
-        Row(
-          children: List.generate(3, (i) {
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                i == activeIndex ? const Color(0xFF5B6BFF) : Colors.white24,
-              ),
-            );
-          }),
-        ),
-
-        // Botón siguiente
-        _circleButton(
-          activeIndex == 2 ? Icons.check : Icons.arrow_forward,
-          onNext!,
-        ),
-      ],
     );
   }
 
@@ -215,9 +188,7 @@ class _OnboardingBase extends StatelessWidget {
     );
   }
 }
-
-// --- LOGIN ---
-
+/ --- LOGIN ---
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -262,7 +233,11 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Bienvenido, ${userModel.name}!')),
       );
 
-      Navigator.pushReplacementNamed(context, '/home');
+      // Aquí vamos al HomeScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -416,6 +391,229 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         filled: true,
         fillColor: Colors.white10,
+      ),
+    );
+  }
+}
+
+// 🔹 HomeScreen integrado
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFF00122B),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white54,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.add_box_rounded), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF001E4E), Color(0xFF001030)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '¡Hola Roman!',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const CircleAvatar(
+                      backgroundColor: Colors.blueAccent,
+                      radius: 22,
+                      child: Icon(Icons.person, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildSectionCard(
+                  title: "Mis servicios",
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      ServiceButton(title: "Lavado de auto", onTap: () {}),
+                      ServiceButton(title: "Busco personal", onTap: () {}),
+                      ServiceButton(title: "Reparación de PC", onTap: () {}),
+                      ServiceButton(title: "Busco niñera", onTap: () {}),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildSectionCard(
+                        title: "Últimos mensajes",
+                        child: Column(
+                          children: const [
+                            MessagePreview(name: "Lucía", message: "Hola, ¿sigue disponible?"),
+                            MessagePreview(name: "Mario", message: "Te envié mis datos."),
+                            MessagePreview(name: "Jorge", message: "Podría empezar el lunes."),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildSectionCard(
+                        title: "Próximos trabajos",
+                        child: Column(
+                          children: const [
+                            MessagePreview(name: "Niñera", message: "Mañana 10:00 AM"),
+                            MessagePreview(name: "Lavado", message: "Viernes 14:00"),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  title: "Cerca de tu zona",
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Hay nuevas búsquedas activas cerca de tu zona. ¡Anímate a postularte o publicar tu servicio!",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          "Hacer publicación",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF002C73).withOpacity(0.7),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class ServiceButton extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+
+  const ServiceButton({
+    super.key,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.blueAccent.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}
+
+class MessagePreview extends StatelessWidget {
+  final String name;
+  final String message;
+
+  const MessagePreview({
+    super.key,
+    required this.name,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
       ),
     );
   }
