@@ -40,8 +40,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  # Opcional: Agregar assets si tienes imágenes locales
-  # assets:
-  #   - assets/images/
+
+assets:
+   assets/images/background_pattern.png
   #   - assets/icons/

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'screens/admin_screen.dart';
-import 'screens/splash1.dart';
-import 'screens/splash2.dart';
-import 'screens/splash3.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +25,9 @@ class MyApp extends StatelessWidget {
         '/splash2': (context) => const Splash2(),
         '/splash3': (context) => const Splash3(),
         '/admin': (context) => const AdminScreen(),
+        '/discover': (context) => const DiscoverScreen(),
       },
+      // En routes:
     );
   }
 }
