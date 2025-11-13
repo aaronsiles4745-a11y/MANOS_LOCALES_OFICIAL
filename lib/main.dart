@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:manos_locales/services/auth_service.dart';
+import 'package:manos_locales/services/user_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user_model.dart';
+
 void main() {
   runApp(const MyApp());
 }
