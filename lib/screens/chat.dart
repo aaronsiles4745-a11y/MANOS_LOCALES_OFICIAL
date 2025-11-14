@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/discover_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/home_dashboard_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ¡Nueva importación!
 import '../models/user_model.dart';
-
-// ===================ss==== MODELO DE CONTACTO =======================
-class UserModel {
-  final String userId;
-  final String name;
-  final String photoUrl;
-  final String bio;
-
-  UserModel({
-    required this.userId,
-    required this.name,
-    required this.photoUrl,
-    required this.bio,
-  });
-}
+import '../services/chat_service.dart';
 
 // ======================= INICIO DE LA APP =======================
 void main() {
@@ -31,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Simulador Chat',
+      title: 'Chat Real',
       home: HomeDashboardScreen(),
     );
   }
@@ -103,29 +91,92 @@ class ChatContactoScreen extends StatefulWidget {
 }
 
 class _ChatContactoScreenState extends State<ChatContactoScreen> {
+  final ChatService _chatService = ChatService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   late List<UserModel> _contactos;
+  List<Map<String, dynamic>> _chatsReales = [];
   int _selectedIndex = 1;
+  bool _cargandoChats = true;
+
   @override
   void initState() {
     super.initState();
-    _contactos = _crearContactosFake();
+    _contactos = _crearContactosDemo();
+    _cargarChatsReales();
   }
 
-  List<UserModel> _crearContactosFake() {
+  // ✅ MANTENER CONTACTOS DEMO COMO FALLBACK
+  List<UserModel> _crearContactosDemo() {
     return [
-      UserModel(userId: "1", name: "Juan", photoUrl: "", bio: "Cortar pasto"),
-      UserModel(userId: "2", name: "María", photoUrl: "", bio: "Arreglar casa"),
       UserModel(
-          userId: "3", name: "Pedro", photoUrl: "", bio: "Pintar paredes"),
-      UserModel(userId: "4", name: "Lucía", photoUrl: "", bio: "Mudanzas"),
+        userId: "user_demo_1",
+        name: "Juan Pérez",
+        photoUrl: "",
+        bio: "Especialista en plomería y reparaciones del hogar",
+        email: "juan@demo.com",
+        phone: "+549112345678",
+        createdAt: DateTime.now(),
+      ),
       UserModel(
-          userId: "5",
-          name: "Carlos",
-          photoUrl: "",
-          bio: "Reparar computadoras"),
+        userId: "user_demo_2",
+        name: "María González",
+        photoUrl: "",
+        bio: "Experta en limpieza y organización de espacios",
+        email: "maria@demo.com",
+        phone: "+549119876543",
+        createdAt: DateTime.now(),
+      ),
       UserModel(
-          userId: "6", name: "Ana", photoUrl: "", bio: "Limpieza de casas"),
+        userId: "user_demo_3",
+        name: "Carlos Rodríguez",
+        photoUrl: "",
+        bio: "Electricista certificado con 10 años de experiencia",
+        email: "carlos@demo.com",
+        phone: "+549113456789",
+        createdAt: DateTime.now(),
+      ),
     ];
+  }
+
+  // ✅ CARGAR CHATS REALES DESDE FIREBASE
+  void _cargarChatsReales() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      setState(() => _cargandoChats = false);
+      return;
+    }
+
+    _chatService.getUserChats(currentUser.uid).listen((chatsSnapshot) {
+      final chats = chatsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final participants = List<String>.from(data['participants'] ?? []);
+        final participantNames =
+            Map<String, String>.from(data['participantNames'] ?? {});
+        final participantPhotos =
+            Map<String, String>.from(data['participantPhotos'] ?? {});
+
+        // Encontrar el otro participante
+        final otherUserId = participants.firstWhere(
+          (id) => id != currentUser.uid,
+          orElse: () => '',
+        );
+
+        return {
+          'chatId': doc.id,
+          'otherUserId': otherUserId,
+          'otherUserName': participantNames[otherUserId] ?? 'Usuario',
+          'otherUserPhotoUrl': participantPhotos[otherUserId] ?? '',
+          'lastMessage': data['lastMessage'] ?? '',
+          'lastMessageAt': data['lastMessageAt'],
+        };
+      }).toList();
+
+      setState(() {
+        _chatsReales = chats;
+        _cargandoChats = false;
+      });
+    });
   }
 
   @override
@@ -163,47 +214,145 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
                       fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _contactos.length,
-                    itemBuilder: (context, index) {
-                      final contacto = _contactos[index];
-                      return Card(
-                        color: const Color(0xFF1B263B).withOpacity(0.8),
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 6, horizontal: 12),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            child: contacto.photoUrl.isEmpty
-                                ? const Icon(Icons.person, color: Colors.white)
-                                : null,
-                          ),
-                          title: Text(contacto.name,
-                              style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(contacto.bio,
-                              style: const TextStyle(color: Colors.white70)),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(contact: contacto),
+                if (_cargandoChats)
+                  const Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(
+                        color: Colors.lightBlueAccent),
+                  )
+                else
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        // ✅ CHATS REALES (SI EXISTEN)
+                        if (_chatsReales.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Text(
+                              "Chats activos",
+                              style: TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
-                        ),
-                      );
-                    },
+                            ),
+                          ),
+                          ..._chatsReales
+                              .map((chat) => _buildChatRealItem(chat)),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Text(
+                              "Contactos disponibles",
+                              style: TextStyle(
+                                color: Colors.lightBlueAccent,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        // ✅ CONTACTOS DEMO (SIEMPRE DISPONIBLES)
+                        ..._contactos.map(
+                            (contacto) => _buildContactoDemoItem(contacto)),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         ],
       ),
+      bottomNavigationBar: _bottomNav(),
     );
   }
 
-  // NAV BAR CON ICONOS MASCULINOS
+  Widget _buildChatRealItem(Map<String, dynamic> chat) {
+    return Card(
+      color: const Color(0xFF1B263B).withOpacity(0.8),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue[800],
+          child: chat['otherUserPhotoUrl']?.isNotEmpty == true
+              ? ClipOval(
+                  child: Image.network(
+                    chat['otherUserPhotoUrl'],
+                    fit: BoxFit.cover,
+                    width: 40,
+                    height: 40,
+                  ),
+                )
+              : const Icon(Icons.person, color: Colors.white),
+        ),
+        title: Text(chat['otherUserName'],
+            style: const TextStyle(color: Colors.white)),
+        subtitle: Text(
+          chat['lastMessage']?.isNotEmpty == true
+              ? chat['lastMessage']
+              : "Iniciar conversación",
+          style: const TextStyle(color: Colors.white70),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () {
+          final contacto = UserModel(
+            userId: chat['otherUserId'],
+            name: chat['otherUserName'],
+            photoUrl: chat['otherUserPhotoUrl'] ?? '',
+            bio: '',
+            email: '',
+            phone: '',
+            createdAt: DateTime.now(),
+          );
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ChatScreen(contact: contacto, chatId: chat['chatId']),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildContactoDemoItem(UserModel contacto) {
+    return Card(
+      color: const Color(0xFF1B263B).withOpacity(0.8),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue[800],
+          child: contacto.photoUrl.isNotEmpty
+              ? ClipOval(
+                  child: Image.network(
+                    contacto.photoUrl,
+                    fit: BoxFit.cover,
+                    width: 40,
+                    height: 40,
+                  ),
+                )
+              : const Icon(Icons.person, color: Colors.white),
+        ),
+        title: Text(contacto.name, style: const TextStyle(color: Colors.white)),
+        subtitle:
+            Text(contacto.bio, style: const TextStyle(color: Colors.white70)),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(contact: contacto),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _bottomNav() {
     return BottomNavigationBar(
       backgroundColor: const Color(0xFF0D1B2A),
@@ -216,31 +365,22 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
           _selectedIndex = index;
         });
 
-        // Navegación según el índice tocado
         switch (index) {
-          case 0: // Inicio
+          case 0:
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const HomeDashboardScreen()),
             );
             break;
-
-          case 1: // Chat
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
-            );
-
+          case 1:
             break;
-
-          case 2: // Buscar (Discover)
+          case 2:
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const DiscoverScreen()),
             );
             break;
-
-          case 3: // Perfil
+          case 3:
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => ProfileScreen()),
@@ -262,9 +402,10 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
 
 // ======================= CHAT INDIVIDUAL =======================
 class ChatScreen extends StatefulWidget {
-  final UserModel contact; // contacto seleccionado
+  final UserModel contact;
+  final String? chatId;
 
-  const ChatScreen({super.key, required this.contact});
+  const ChatScreen({super.key, required this.contact, this.chatId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -272,30 +413,143 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [];
+  final ChatService _chatService = ChatService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String? _currentChatId;
+  List<Map<String, dynamic>> _messages = [];
+  bool _cargandoMensajes = true;
 
   @override
   void initState() {
     super.initState();
-    // Mensajes iniciales simulando coordinación
-    _messages.addAll([
-      {
-        "text":
-            "Hola, me gustaría contratarte para ${widget.contact.bio.toLowerCase()}.",
-        "isMe": false
-      },
-      {
-        "text": "Hola! Sí, puedo ayudarte. ¿Cuándo quieres hacerlo?",
-        "isMe": true
-      },
-    ]);
+    _inicializarChat();
   }
 
-  void _send() {
-    if (_controller.text.trim().isEmpty) return;
+  Future<void> _inicializarChat() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      _cargarMensajesDemo();
+      return;
+    }
+
+    try {
+      // ✅ USAR CHAT EXISTENTE O CREAR UNO NUEVO
+      _currentChatId = widget.chatId ??
+          await _chatService.getOrCreateChat(
+            currentUserId: currentUser.uid,
+            contactId: widget.contact.userId,
+            currentUserName: currentUser.displayName ?? 'Usuario',
+            contactName: widget.contact.name,
+            currentUserPhotoUrl: currentUser.photoURL ?? '',
+            contactPhotoUrl: widget.contact.photoUrl,
+          );
+
+      // ✅ CARGAR MENSAJES REALES EN TIEMPO REAL
+      _cargarMensajesReales();
+    } catch (e) {
+      print("❌ Error inicializando chat: $e");
+      _cargarMensajesDemo();
+    }
+  }
+
+  void _cargarMensajesReales() {
+    if (_currentChatId == null) {
+      _cargarMensajesDemo();
+      return;
+    }
+
+    _chatService.getChatMessages(_currentChatId!).listen((messagesSnapshot) {
+      final mensajes = messagesSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final currentUser = _auth.currentUser;
+        final isMe = data['senderId'] == currentUser?.uid;
+
+        return {
+          'id': doc.id,
+          'text': data['text'] ?? '',
+          'isMe': isMe,
+          'timestamp': (data['timestamp'] as Timestamp).toDate(),
+          'senderName': data['senderName'] ?? 'Usuario',
+          'read': data['read'] ?? false,
+        };
+      }).toList();
+
+      setState(() {
+        _messages = mensajes;
+        _cargandoMensajes = false;
+      });
+
+      // ✅ MARCAR MENSAJES COMO LEÍDOS
+      _chatService.markMessagesAsRead(_currentChatId!, _auth.currentUser!.uid);
+    });
+  }
+
+  void _cargarMensajesDemo() {
+    // ✅ MANTENER MENSAJES DEMO COMO FALLBACK
     setState(() {
-      _messages.add({"text": _controller.text.trim(), "isMe": true});
+      _messages = [
+        {
+          "text":
+              "Hola, me gustaría contratarte para ${widget.contact.bio.toLowerCase()}.",
+          "isMe": false,
+          "timestamp": DateTime.now().subtract(const Duration(minutes: 5)),
+          "senderName": widget.contact.name,
+          "read": true,
+        },
+        {
+          "text": "Hola! Sí, puedo ayudarte. ¿Cuándo quieres hacerlo?",
+          "isMe": true,
+          "timestamp": DateTime.now().subtract(const Duration(minutes: 4)),
+          "senderName": "Tú",
+          "read": true,
+        },
+      ];
+      _cargandoMensajes = false;
+    });
+  }
+
+  void _sendMessage() async {
+    if (_controller.text.trim().isEmpty) return;
+
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      // ✅ AGREGAR MENSAJE LOCAL SI NO HAY USUARIO AUTENTICADO
+      _agregarMensajeLocal(_controller.text.trim(), true);
       _controller.clear();
+      return;
+    }
+
+    if (_currentChatId == null) {
+      await _inicializarChat();
+    }
+
+    try {
+      // ✅ ENVIAR MENSAJE REAL A FIREBASE
+      await _chatService.sendMessage(
+        chatId: _currentChatId!,
+        text: _controller.text.trim(),
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName ?? 'Usuario',
+      );
+      _controller.clear();
+    } catch (e) {
+      print("❌ Error enviando mensaje: $e");
+      // ✅ FALLBACK: AGREGAR MENSAJE LOCAL
+      _agregarMensajeLocal(_controller.text.trim(), true);
+      _controller.clear();
+    }
+  }
+
+  void _agregarMensajeLocal(String text, bool isMe) {
+    setState(() {
+      _messages.add({
+        "text": text,
+        "isMe": isMe,
+        "timestamp": DateTime.now(),
+        "senderName": isMe ? "Tú" : widget.contact.name,
+        "read": true,
+      });
     });
   }
 
@@ -332,50 +586,86 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        child: widget.contact.photoUrl.isEmpty
-                            ? const Icon(Icons.person, color: Colors.white)
-                            : null,
+                        backgroundColor: Colors.blue[800],
+                        child: widget.contact.photoUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  widget.contact.photoUrl,
+                                  fit: BoxFit.cover,
+                                  width: 40,
+                                  height: 40,
+                                ),
+                              )
+                            : const Icon(Icons.person, color: Colors.white),
                       ),
                       const SizedBox(width: 10),
-                      Text(widget.contact.name,
-                          style: const TextStyle(
-                              color: Colors.lightBlueAccent,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.contact.name,
+                              style: const TextStyle(
+                                  color: Colors.lightBlueAccent,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold)),
+                          Text(widget.contact.bio,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 14)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 const Divider(color: Colors.white54, height: 1),
-                // Chat
+
+                // ✅ CHAT - MANTIENE EXACTAMENTE LA MISMA UI
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      return Align(
-                        alignment: msg["isMe"]
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
+                  child: _cargandoMensajes
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                              color: Colors.lightBlueAccent))
+                      : ListView.builder(
                           padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            color: msg["isMe"]
-                                ? Colors.lightBlueAccent.withOpacity(0.6)
-                                : Colors.blueGrey.shade700,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            msg["text"],
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = _messages[index];
+                            return Align(
+                              alignment: msg["isMe"]
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: msg["isMe"]
+                                      ? Colors.lightBlueAccent.withOpacity(0.6)
+                                      : Colors.blueGrey.shade700,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      msg["text"],
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTime(msg["timestamp"]),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6),
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
-                // Caja de mensaje
+
+                // ✅ CAJA DE MENSAJE - MANTIENE EXACTAMENTE LA MISMA UI
                 Container(
                   padding: const EdgeInsets.all(8),
                   child: Row(
@@ -385,7 +675,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           controller: _controller,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            hintText: "Mensaje...",
+                            hintText: "Escribe un mensaje...",
                             hintStyle: const TextStyle(color: Colors.white60),
                             filled: true,
                             fillColor: Colors.black26,
@@ -393,14 +683,16 @@ class _ChatScreenState extends State<ChatScreen> {
                               borderRadius: BorderRadius.circular(24),
                               borderSide: BorderSide.none,
                             ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                           ),
-                          onSubmitted: (_) => _send(),
+                          onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.send,
                             color: Colors.lightBlueAccent),
-                        onPressed: _send,
+                        onPressed: _sendMessage,
                       ),
                     ],
                   ),
@@ -411,5 +703,9 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime timestamp) {
+    return "${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}";
   }
 }

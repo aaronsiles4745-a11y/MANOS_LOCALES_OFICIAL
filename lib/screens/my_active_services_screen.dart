@@ -42,8 +42,8 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
     }
   }
 
+  // ✅ FUNCIÓN CORREGIDA - AHORA ACTUALIZA FIREBASE
   Future<void> _finalizeJob(String serviceId) async {
-    // Mostrar diálogo de confirmación
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -70,12 +70,28 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
       ),
     );
 
-    if (confirm == true) {
-      // TODO: Actualizar estado del servicio a "finalizado"
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // ✅ LLAMADA REAL A FIREBASE
+      await _serviceService.completeService(serviceId);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trabajo finalizado')),
+        const SnackBar(content: Text('✅ Trabajo finalizado correctamente')),
       );
+
+      // Recargar la lista
       _loadServices();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Error: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -105,7 +121,7 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
                     ),
                     const SizedBox(width: 12),
                     const Text(
-                      'Mis servicios',
+                      'Mis servicios activos',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -123,9 +139,23 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
                         child: CircularProgressIndicator(color: Colors.blue))
                     : _services.isEmpty
                         ? Center(
-                            child: Text(
-                              'No tienes servicios activos',
-                              style: TextStyle(color: Colors.grey[400]),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.work_outline,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No tienes servicios activos',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(
@@ -165,52 +195,70 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
 
-          // Estado
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.blue),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Encargado',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          Text(
+            service.description.length > 100
+                ? '${service.description.substring(0, 100)}...'
+                : service.description,
+            style: TextStyle(
+              color: Colors.grey[300],
+              fontSize: 14,
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Proveedor (en este caso, el usuario asignado)
+          // Estado y Precio
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.blue[900],
-                backgroundImage: service.providerPhotoUrl.isNotEmpty
-                    ? NetworkImage(service.providerPhotoUrl)
-                    : null,
-                child: service.providerPhotoUrl.isEmpty
-                    ? const Icon(Icons.person, color: Colors.white, size: 20)
-                    : null,
+              // Estado
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.blue),
+                ),
+                child: Text(
+                  'Activo',
+                  style: TextStyle(
+                    color: Colors.blue[300],
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              const SizedBox(width: 12),
+
+              const Spacer(),
+
+              // Precio
               Text(
-                service.providerName,
+                service.formattedPrice,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
+                  color: Colors.lightBlueAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Ubicación
+          Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.grey[400], size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  service.locationText,
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -230,7 +278,10 @@ class _MyActiveServicesScreenState extends State<MyActiveServicesScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Finalizar trabajo'),
+              child: const Text(
+                'Finalizar trabajo',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ),
         ],
