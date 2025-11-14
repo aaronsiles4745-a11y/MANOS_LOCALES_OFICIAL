@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:manos_locales/screens/home_dashboard_screen.dart';
+import 'package:manos_locales/screens/login_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/home_dashboard_screen.dart';
 
 import 'package:manos_locales/services/auth_service.dart';
 import 'package:manos_locales/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -22,10 +28,13 @@ class MyApp extends StatelessWidget {
       routes: {
         '/onboarding2': (context) => const Onboarding2Screen(),
         '/onboarding3': (context) => const Onboarding3Screen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeDashboardScreen(),
       },
     );
   }
 }
+
 
 // --- ONBOARDING 1 ---
 class Onboarding1Screen extends StatelessWidget {
