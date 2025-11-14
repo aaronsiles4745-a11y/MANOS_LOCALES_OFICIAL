@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // Screens principales
+import 'detalle_candidato_screen.dart';
+import 'detalle_puesto_trabajo_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_dashboard_screen.dart';
 import 'screens/discover_screen.dart';

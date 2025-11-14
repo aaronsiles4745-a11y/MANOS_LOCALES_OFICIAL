@@ -14,7 +14,7 @@ class ProfileScreen extends StatelessWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       return const Scaffold(
-        body: Center(child: Text('Sin sesiÃ³n')),
+        body: Center(child: Text('Sin sesión')),
       );
     }
 
@@ -37,27 +37,36 @@ class ProfileScreen extends StatelessWidget {
         }
 
         final locationText =
-            user.phone.isNotEmpty ? user.phone : 'UbicaciÃ³n no disponible';
+        user.phone.isNotEmpty ? user.phone : 'Ubicación no disponible';
         final highlightText = user.bio.isNotEmpty
             ? user.bio
-            : 'Los vecinos destacan tu puntualidad y buena atenciÃ³n.';
+            : 'Los vecinos destacan tu puntualidad y buena atención.';
         final aboutText = user.bio.isNotEmpty
             ? user.bio
-            : 'AÃ±ade una breve descripciÃ³n para que los vecinos te conozcan.';
+            : 'Añade una breve descripción para que los vecinos te conozcan.';
 
         return Scaffold(
-          backgroundColor: Colors.black,
           body: Stack(
             children: [
-              Positioned.fill(
+              // Fondo de pantalla
+              SizedBox.expand(
                 child: Image.asset(
-                  'assets/images/fondodeapp.jpg',
+                  'assets/images/background_pattern.png',
                   fit: BoxFit.cover,
                 ),
               ),
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.35),
+              // Degradado sobre el fondo
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withOpacity(0.5),
+                      Colors.black.withOpacity(0.2),
+                      Colors.black.withOpacity(0.5),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
               ),
               SafeArea(
@@ -97,8 +106,8 @@ class ProfileScreen extends StatelessWidget {
                                 backgroundImage: user.photoUrl.isNotEmpty
                                     ? NetworkImage(user.photoUrl)
                                     : const AssetImage(
-                                            'assets/images/avatar_placeholder.png')
-                                        as ImageProvider,
+                                    'assets/images/avatar_placeholder.png')
+                                as ImageProvider,
                               ),
                             ),
                             const SizedBox(height: 18),
@@ -147,7 +156,7 @@ class ProfileScreen extends StatelessWidget {
                             const Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                'Sobre mÃ­',
+                                'Sobre mí',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -190,7 +199,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             _PrimaryButton(
-                              label: 'Cerrar sesiÃ³n',
+                              label: 'Cerrar sesión',
                               color: const Color(0xFF121A59),
                               onPressed: () async {
                                 await FirebaseAuth.instance.signOut();
@@ -300,21 +309,38 @@ class _BottomNavBar extends StatelessWidget {
       Icons.person
     ];
 
+    final labels = ['Inicio', 'Chat', 'Buscar', 'Perfil'];
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.45),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: icons.map((icon) {
+        children: List.generate(icons.length, (index) {
+          final icon = icons[index];
+          final label = labels[index];
           final isActive = icon == Icons.person;
-          return Icon(
-            icon,
-            color: isActive ? Colors.white : Colors.white54,
-            size: 26,
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isActive ? Colors.white : Colors.white54,
+                size: 26,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           );
-        }).toList(),
+        }),
       ),
     );
   }
