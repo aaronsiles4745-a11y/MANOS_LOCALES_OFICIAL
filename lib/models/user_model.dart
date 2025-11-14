@@ -15,6 +15,7 @@ class UserModel {
   final int ratingCount;
   final DateTime createdAt;
   final bool active;
+  final String status;
 
   UserModel({
     required this.userId,
@@ -31,6 +32,7 @@ class UserModel {
     this.ratingCount = 0,
     required this.createdAt,
     this.active = true,
+    this.status = 'active',
   });
 
   // ============== NUEVO: Helper para verificar si puede ofrecer servicios ==============
@@ -66,9 +68,7 @@ class UserModel {
       phone: data['phone'] ?? '',
       phoneVerified: data['phoneVerified'] ?? false, // ← NUEVO
       verificationCode: data['verificationCode'] ?? '', // ← NUEVO
-      verificationCodeExpiry:
-          data['verificationCodeExpiry'] !=
-              null // ← NUEVO
+      verificationCodeExpiry: data['verificationCodeExpiry'] != null // ← NUEVO
           ? (data['verificationCodeExpiry'] as Timestamp).toDate()
           : null,
       photoUrl: data['photoUrl'] ?? '',
@@ -78,6 +78,7 @@ class UserModel {
       ratingCount: data['ratingCount'] ?? 0,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       active: data['active'] ?? true,
+      status: data['status'] ?? 'active',
     );
   }
 
@@ -89,9 +90,7 @@ class UserModel {
       'phone': phone,
       'phoneVerified': phoneVerified, // ← NUEVO
       'verificationCode': verificationCode, // ← NUEVO
-      'verificationCodeExpiry':
-          verificationCodeExpiry !=
-              null // ← NUEVO
+      'verificationCodeExpiry': verificationCodeExpiry != null // ← NUEVO
           ? Timestamp.fromDate(verificationCodeExpiry!)
           : null,
       'photoUrl': photoUrl,
@@ -101,6 +100,7 @@ class UserModel {
       'ratingCount': ratingCount,
       'createdAt': Timestamp.fromDate(createdAt),
       'active': active,
+      'status': status,
     };
   }
 
@@ -118,6 +118,7 @@ class UserModel {
     double? ratingAvg,
     int? ratingCount,
     bool? active,
+    String? status,
   }) {
     return UserModel(
       userId: userId,
@@ -135,6 +136,7 @@ class UserModel {
       ratingCount: ratingCount ?? this.ratingCount,
       createdAt: createdAt,
       active: active ?? this.active,
+      status: status ?? this.status,
     );
   }
 }
