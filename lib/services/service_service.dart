@@ -122,4 +122,28 @@ class ServiceService {
       throw 'Error al eliminar servicio: $e';
     }
   }
+
+  // FUNCIÓN FALTANTE - AGREGAR A service_service.dart
+  Future<void> updateServiceStatus(String serviceId, String status) async {
+    try {
+      await _servicesCollection.doc(serviceId).update({
+        'status': status,
+        'updatedAt': Timestamp.now(),
+      });
+    } catch (e) {
+      throw 'Error al actualizar estado: $e';
+    }
+  }
+
+  Future<void> completeService(String serviceId) async {
+    try {
+      await _servicesCollection.doc(serviceId).update({
+        'active': false,
+        'status': 'completed',
+        'updatedAt': Timestamp.now(),
+      });
+    } catch (e) {
+      throw 'Error al completar servicio: $e';
+    }
+  }
 }
