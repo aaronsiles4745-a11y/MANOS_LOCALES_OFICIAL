@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
 import 'edit_profile_screen.dart';
+import '../screens/home_dashboard_screen.dart';
+import '../screens/chat.dart' hide UserModel, HomeDashboardScreen;
+import '../screens/discover_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
-
   final UserService _userService = UserService();
 
   @override
@@ -37,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
         }
 
         final locationText =
-        user.phone.isNotEmpty ? user.phone : 'Ubicación no disponible';
+            user.phone.isNotEmpty ? user.phone : 'Ubicación no disponible';
         final highlightText = user.bio.isNotEmpty
             ? user.bio
             : 'Los vecinos destacan tu puntualidad y buena atención.';
@@ -106,8 +108,8 @@ class ProfileScreen extends StatelessWidget {
                                 backgroundImage: user.photoUrl.isNotEmpty
                                     ? NetworkImage(user.photoUrl)
                                     : const AssetImage(
-                                    'assets/images/avatar_placeholder.png')
-                                as ImageProvider,
+                                            'assets/images/avatar_placeholder.png')
+                                        as ImageProvider,
                               ),
                             ),
                             const SizedBox(height: 18),
@@ -209,7 +211,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const _BottomNavBar(),
+                    const _BottomNavBar(activeIndex: 3), // Índice 3 para Perfil
                   ],
                 ),
               ),
@@ -298,10 +300,17 @@ class _PrimaryButton extends StatelessWidget {
 }
 
 class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar();
+  final int activeIndex;
+  const _BottomNavBar({required this.activeIndex});
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      const HomeDashboardScreen(), // Índice 0: Inicio
+      const ChatContactoScreen(), // Índice 1: Chat
+      const DiscoverScreen(), // Índice 2: Buscar
+      ProfileScreen(), // Índice 3: Perfil
+    ];
     final icons = [
       Icons.home_outlined,
       Icons.chat_bubble_outline,
@@ -321,25 +330,32 @@ class _BottomNavBar extends StatelessWidget {
         children: List.generate(icons.length, (index) {
           final icon = icons[index];
           final label = labels[index];
-          final isActive = icon == Icons.person;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isActive ? Colors.white : Colors.white54,
-                size: 26,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white54,
-                  fontSize: 12,
+          final isActive = index == activeIndex;
+          return GestureDetector(
+              // 👈 Añadir el Detector de Gestos
+              onTap: () {
+                // Navegar a la pantalla correspondiente
+                // Reemplazar la pantalla actual si ya estamos en un nivel profundo
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => screens[index]),
+                );
+              },
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(
+                  icon,
+                  // Usamos isActive (basado en el índice) para el color
+                  color: isActive ? Colors.lightBlueAccent : Colors.white54,
+                  size: 26,
                 ),
-              ),
-            ],
-          );
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive ? Colors.lightBlueAccent : Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+              ]));
         }),
       ),
     );

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../screens/discover_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/home_dashboard_screen.dart';
+import '../models/user_model.dart';
 
-// ======================= MODELO DE CONTACTO =======================
+// ===================ss==== MODELO DE CONTACTO =======================
 class UserModel {
   final String userId;
   final String name;
@@ -68,14 +72,17 @@ class HomeDashboardScreen extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.lightBlueAccent,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  textStyle: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 child: const Text("Ir a Chat"),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const ChatContactoScreen()),
                   );
                 },
               ),
@@ -97,7 +104,7 @@ class ChatContactoScreen extends StatefulWidget {
 
 class _ChatContactoScreenState extends State<ChatContactoScreen> {
   late List<UserModel> _contactos;
-
+  int _selectedIndex = 1;
   @override
   void initState() {
     super.initState();
@@ -108,10 +115,16 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
     return [
       UserModel(userId: "1", name: "Juan", photoUrl: "", bio: "Cortar pasto"),
       UserModel(userId: "2", name: "María", photoUrl: "", bio: "Arreglar casa"),
-      UserModel(userId: "3", name: "Pedro", photoUrl: "", bio: "Pintar paredes"),
+      UserModel(
+          userId: "3", name: "Pedro", photoUrl: "", bio: "Pintar paredes"),
       UserModel(userId: "4", name: "Lucía", photoUrl: "", bio: "Mudanzas"),
-      UserModel(userId: "5", name: "Carlos", photoUrl: "", bio: "Reparar computadoras"),
-      UserModel(userId: "6", name: "Ana", photoUrl: "", bio: "Limpieza de casas"),
+      UserModel(
+          userId: "5",
+          name: "Carlos",
+          photoUrl: "",
+          bio: "Reparar computadoras"),
+      UserModel(
+          userId: "6", name: "Ana", photoUrl: "", bio: "Limpieza de casas"),
     ];
   }
 
@@ -122,7 +135,8 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
         children: [
           // Fondo y degradado igual que Home
           SizedBox.expand(
-            child: Image.asset('assets/images/background_pattern.png', fit: BoxFit.cover),
+            child: Image.asset('assets/images/background_pattern.png',
+                fit: BoxFit.cover),
           ),
           Container(
             decoration: BoxDecoration(
@@ -156,14 +170,16 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
                       final contacto = _contactos[index];
                       return Card(
                         color: const Color(0xFF1B263B).withOpacity(0.8),
-                        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 6, horizontal: 12),
                         child: ListTile(
                           leading: CircleAvatar(
                             child: contacto.photoUrl.isEmpty
                                 ? const Icon(Icons.person, color: Colors.white)
                                 : null,
                           ),
-                          title: Text(contacto.name, style: const TextStyle(color: Colors.white)),
+                          title: Text(contacto.name,
+                              style: const TextStyle(color: Colors.white)),
                           subtitle: Text(contacto.bio,
                               style: const TextStyle(color: Colors.white70)),
                           onTap: () {
@@ -184,6 +200,62 @@ class _ChatContactoScreenState extends State<ChatContactoScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // NAV BAR CON ICONOS MASCULINOS
+  Widget _bottomNav() {
+    return BottomNavigationBar(
+      backgroundColor: const Color(0xFF0D1B2A),
+      selectedItemColor: Colors.lightBlueAccent,
+      unselectedItemColor: Colors.white70,
+      currentIndex: _selectedIndex,
+      type: BottomNavigationBarType.fixed,
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+
+        // Navegación según el índice tocado
+        switch (index) {
+          case 0: // Inicio
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeDashboardScreen()),
+            );
+            break;
+
+          case 1: // Chat
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
+            );
+
+            break;
+
+          case 2: // Buscar (Discover)
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiscoverScreen()),
+            );
+            break;
+
+          case 3: // Perfil
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProfileScreen()),
+            );
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Buscar"),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline), label: "Perfil"),
+      ],
     );
   }
 }
@@ -207,8 +279,15 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     // Mensajes iniciales simulando coordinación
     _messages.addAll([
-      {"text": "Hola, me gustaría contratarte para ${widget.contact.bio.toLowerCase()}.", "isMe": false},
-      {"text": "Hola! Sí, puedo ayudarte. ¿Cuándo quieres hacerlo?", "isMe": true},
+      {
+        "text":
+            "Hola, me gustaría contratarte para ${widget.contact.bio.toLowerCase()}.",
+        "isMe": false
+      },
+      {
+        "text": "Hola! Sí, puedo ayudarte. ¿Cuándo quieres hacerlo?",
+        "isMe": true
+      },
     ]);
   }
 
@@ -227,7 +306,8 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           // Fondo igual que Home
           SizedBox.expand(
-            child: Image.asset('assets/images/background_pattern.png', fit: BoxFit.cover),
+            child: Image.asset('assets/images/background_pattern.png',
+                fit: BoxFit.cover),
           ),
           Container(
             decoration: BoxDecoration(
@@ -247,7 +327,8 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 // AppBar simulado
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
                       CircleAvatar(
@@ -273,7 +354,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
                       return Align(
-                        alignment: msg["isMe"] ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: msg["isMe"]
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -315,7 +398,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.send, color: Colors.lightBlueAccent),
+                        icon: const Icon(Icons.send,
+                            color: Colors.lightBlueAccent),
                         onPressed: _send,
                       ),
                     ],

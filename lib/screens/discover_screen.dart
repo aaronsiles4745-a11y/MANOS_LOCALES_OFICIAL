@@ -5,6 +5,9 @@ import '../models/service_model.dart';
 import '../models/category_model.dart';
 import '../widgets/service_card_discover.dart';
 import '../widgets/filter_bottom_sheet.dart';
+import '../screens/chat.dart' hide HomeDashboardScreen;
+import '../screens/profile_screen.dart';
+import '../screens/home_dashboard_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({Key? key}) : super(key: key);
@@ -16,7 +19,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   final _serviceService = ServiceService();
   final _categoryService = CategoryService();
-
+  int _selectedIndex = 2; // Índice seleccionado en el BottomNavBar
   List<ServiceModel> _services = [];
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
@@ -332,52 +335,52 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
               // Grid de servicios
               Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.blue),
-                      )
-                    : _services.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off,
-                                  size: 64,
-                                  color: Colors.grey[600],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No hay servicios disponibles',
-                                  style: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 16,
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.blue),
+                        )
+                      : _services.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 64,
+                                    color: Colors.grey[600],
                                   ),
-                                ),
-                              ],
-                            ),
-                          )
-                      :ListView.builder(
-  padding: const EdgeInsets.symmetric(horizontal: 20),
-  itemCount: _services.length,
-  itemBuilder: (context, index) {
-    return ServiceCardDiscover(
-      service: _services[index],
-      onTap: () {
-        Navigator.pushNamed(context, '/detalle_candidato');
-      },
-    );
-  },
-)
-
-              ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No hay servicios disponibles',
+                                    style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _services.length,
+                              itemBuilder: (context, index) {
+                                return ServiceCardDiscover(
+                                  service: _services[index],
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                        context, '/detalle_candidato');
+                                  },
+                                );
+                              },
+                            )),
             ],
           ),
         ),
       ),
 
       // Bottom Navigation Bar
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: _bottomNav(),
     );
   }
 
@@ -436,34 +439,58 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  Widget _buildBottomNavBar() {
+  // NAV BAR CON ICONOS MASCULINOS
+  Widget _bottomNav() {
     return BottomNavigationBar(
       backgroundColor: const Color(0xFF0D1B2A),
       selectedItemColor: Colors.lightBlueAccent,
       unselectedItemColor: Colors.white70,
-      currentIndex: 3, // Descubrir activo
+      currentIndex: _selectedIndex,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+
+        // Navegación según el índice tocado
         switch (index) {
           case 0: // Inicio
-            Navigator.pop(context); // Vuelve a Home
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeDashboardScreen()),
+            );
             break;
+
           case 1: // Chat
-          // Navegar a ChatScreen si existe
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
+            );
+
             break;
-          case 2: // Buscar
-          // Opcional: mostrar mensaje o no hacer nada
+
+          case 2: // Buscar (Discover)
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiscoverScreen()),
+            );
             break;
-          case 3: // Descubrir
-          // Ya estamos aquí
+
+          case 3: // Perfil
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProfileScreen()),
+            );
             break;
         }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Perfil"),
-        BottomNavigationBarItem(icon: Icon(Icons.explore), label: "Buscar"),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Buscar"),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline), label: "Perfil"),
       ],
     );
   }
