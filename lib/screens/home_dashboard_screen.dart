@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
 
+// 🔹 IMPORTAR DISCOVER SCREEN
+import '../screens/discover_screen.dart'; // Ajusta la ruta según tu proyecto
+
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({Key? key}) : super(key: key);
 
@@ -214,6 +217,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         setState(() {
           _selectedIndex = index;
         });
+
+        // 🔹 Navegación a DiscoverScreen si toca Buscar (índice 2)
+        if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DiscoverScreen()),
+          );
+        }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),

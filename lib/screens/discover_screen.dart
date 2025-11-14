@@ -437,56 +437,33 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF001F3F),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, 'Inicio', isSelected: true),
-              _buildNavItem(Icons.chat_bubble_outline, 'Mensajes',
-                  isSelected: false),
-              _buildNavItem(Icons.description_outlined, 'Documentos',
-                  isSelected: false),
-              _buildNavItem(Icons.person_outline, 'Perfil', isSelected: false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label,
-      {required bool isSelected}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected ? Colors.blue : Colors.grey[600],
-          size: 28,
-        ),
-        const SizedBox(height: 4),
-        if (isSelected)
-          Container(
-            width: 4,
-            height: 4,
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-            ),
-          ),
+    return BottomNavigationBar(
+      backgroundColor: const Color(0xFF0D1B2A),
+      selectedItemColor: Colors.lightBlueAccent,
+      unselectedItemColor: Colors.white70,
+      currentIndex: 3, // Descubrir activo
+      type: BottomNavigationBarType.fixed,
+      onTap: (index) {
+        switch (index) {
+          case 0: // Inicio
+            Navigator.pop(context); // Vuelve a Home
+            break;
+          case 1: // Chat
+          // Navegar a ChatScreen si existe
+            break;
+          case 2: // Buscar
+          // Opcional: mostrar mensaje o no hacer nada
+            break;
+          case 3: // Descubrir
+          // Ya estamos aquí
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Perfil"),
+        BottomNavigationBarItem(icon: Icon(Icons.explore), label: "Buscar"),
       ],
     );
   }
