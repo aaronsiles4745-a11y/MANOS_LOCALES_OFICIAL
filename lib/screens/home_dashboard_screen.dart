@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:manos_locales/app.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -33,20 +35,40 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   Future<void> _loadData() async {
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final userId = authService.currentUser?.uid;
-      
-      if (userId != null) {
+      // Usamos Firebase directamente para evitar posibles problemas con el provider
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+
+      // DEBUG 1: ver si hay uid
+      print("DEBUG: UID Firebase -> $userId");
+
+      if (userId == null) {
+        print("DEBUG: No hay usuario logueado (userId == null).");
+        return;
+      }
+
+      // DEBUG 2: leer documento directamente desde Firestore
+      print("DEBUG: Buscando usuario en Firestore...");
+      final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+      // DEBUG 3: mostrar el contenido crudo del documento
+      print("DEBUG: Datos Firestore -> ${doc.data()}");
+
+      // Si existe el documento, convertirlo con tu servicio (opcional)
+      if (doc.exists) {
         final user = await _userService.getUserById(userId);
+        print("DEBUG: Usuario desde UserService -> ${user?.name}");
+
         final services = await _serviceService.getProviderServices(userId);
-        
+
         setState(() {
           _currentUser = user;
           _myServices = services.take(2).toList();
         });
+      } else {
+        print("DEBUG: Documento no encontrado en users/$userId");
       }
     } catch (e) {
-      print('Error: $e');
+      print("DEBUG: Error en _loadData -> $e");
     } finally {
       setState(() => _isLoading = false);
     }
