@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:manos_locales/screens/home_dashboard_screen.dart';
-import 'package:manos_locales/screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+// Screens principales
+import 'screens/login_screen.dart';
 import 'screens/home_dashboard_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'services/auth_service.dart';
-import 'app.dart'; // o donde esté tu MaterialApp
-import 'package:manos_locales/services/auth_service.dart';
-import 'package:manos_locales/services/user_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
-import 'package:manos_locales/app.dart';
+import 'screens/discover_screen.dart';
 
+// Pantallas de detalle
+import 'screens/detalle_candidato_screen.dart';
+import 'screens/detalle_puesto_trabajo_screen.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const MyApp());
@@ -27,21 +23,32 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Onboarding Demo',
+      title: 'Manos Locales',
       theme: ThemeData.dark(),
+
+      // 🔥 Pantalla inicial
       home: const Onboarding1Screen(),
+
+      // 🔥 Todas las rutas de la app
       routes: {
         '/onboarding2': (context) => const Onboarding2Screen(),
         '/onboarding3': (context) => const Onboarding3Screen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeDashboardScreen(),
+        '/discover': (context) => const DiscoverScreen(),
+
+        // 🔥 Rutas nuevas de detalles
+        '/detalle_candidato': (context) => const DetalleCandidatoScreen(),
+        '/detalle_puesto': (context) => const DetallePuestoScreen(),
       },
     );
   }
 }
 
+//////////////////////////////////////////////////////
+//               ONBOARDING 1
+//////////////////////////////////////////////////////
 
-// --- ONBOARDING 1 ---
 class Onboarding1Screen extends StatelessWidget {
   const Onboarding1Screen({super.key});
 
@@ -59,7 +66,10 @@ class Onboarding1Screen extends StatelessWidget {
   }
 }
 
-// --- ONBOARDING 2 ---
+//////////////////////////////////////////////////////
+//               ONBOARDING 2
+//////////////////////////////////////////////////////
+
 class Onboarding2Screen extends StatelessWidget {
   const Onboarding2Screen({super.key});
 
@@ -77,7 +87,10 @@ class Onboarding2Screen extends StatelessWidget {
   }
 }
 
-// --- ONBOARDING 3 ---
+//////////////////////////////////////////////////////
+//               ONBOARDING 3
+//////////////////////////////////////////////////////
+
 class Onboarding3Screen extends StatelessWidget {
   const Onboarding3Screen({super.key});
 
@@ -89,14 +102,16 @@ class Onboarding3Screen extends StatelessWidget {
       subtitle:
           'Registrate o iniciá sesión para acceder a todos los beneficios.',
       activeIndex: 2,
-      onNext: () =>
-          Navigator.pushReplacementNamed(context, '/login'), // Ir al login
+      onNext: () => Navigator.pushReplacementNamed(context, '/login'),
       onBack: () => Navigator.pop(context),
     );
   }
 }
 
-// --- PLANTILLA BASE ---
+//////////////////////////////////////////////////////
+//       BASE REUTILIZABLE DEL ONBOARDING
+//////////////////////////////////////////////////////
+
 class _OnboardingBase extends StatelessWidget {
   final String image;
   final String title;
@@ -128,23 +143,18 @@ class _OnboardingBase extends StatelessWidget {
               ),
             ),
           ),
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo de la app
-                  Image.asset(
-                    'assets/images/logo.png',
-                    height: 80,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.store, size: 60),
-                  ),
+                  Image.asset('assets/images/logo.png', height: 80),
                   const SizedBox(height: 24),
-                  // Imagen principal
+
                   Image.asset(image, height: 240),
                   const SizedBox(height: 24),
+
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -154,20 +164,25 @@ class _OnboardingBase extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
+
                   const SizedBox(height: 10),
+
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
+
                   const Spacer(),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (onBack != null)
-                        _circleButton(Icons.arrow_back, onBack!)
-                      else
-                        const SizedBox(width: 48),
+                      onBack != null
+                          ? _circleButton(Icons.arrow_back, onBack!)
+                          : const SizedBox(width: 48),
+
+                      // Indicadores
                       Row(
                         children: List.generate(3, (i) {
                           return Container(
@@ -177,15 +192,17 @@ class _OnboardingBase extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: i == activeIndex
-                                  ? const Color(0xFF5B6BFF)
+                                  ? Colors.blue
                                   : Colors.white24,
                             ),
                           );
                         }),
                       ),
+
                       _circleButton(
-                          activeIndex == 2 ? Icons.check : Icons.arrow_forward,
-                          onNext!),
+                        activeIndex == 2 ? Icons.check : Icons.arrow_forward,
+                        onNext!,
+                      ),
                     ],
                   ),
                 ],
