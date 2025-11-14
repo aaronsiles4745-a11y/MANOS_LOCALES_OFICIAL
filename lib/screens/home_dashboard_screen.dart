@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:manos_locales/screens/profile_screen.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
 
 // 🔹 IMPORTAR DISCOVER SCREEN
-import '../screens/discover_screen.dart'; // Ajusta la ruta según tu proyecto
+import '../screens/discover_screen.dart';
+import 'chat.dart' hide UserModel; // Ajusta la ruta según tu proyecto
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({Key? key}) : super(key: key);
@@ -218,12 +220,36 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           _selectedIndex = index;
         });
 
-        // 🔹 Navegación a DiscoverScreen si toca Buscar (índice 2)
-        if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const DiscoverScreen()),
-          );
+        // Navegación según el índice tocado
+        switch (index) {
+          case 0: // Inicio
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeDashboardScreen()),
+            );
+            break;
+
+          case 1: // Chat
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
+            );
+
+            break;
+
+          case 2: // Buscar (Discover)
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiscoverScreen()),
+            );
+            break;
+
+          case 3: // Perfil
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProfileScreen()),
+            );
+            break;
         }
       },
       items: const [

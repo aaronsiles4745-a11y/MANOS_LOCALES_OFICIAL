@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:manos_locales/services/user_service.dart';
-import 'package:manos_locales/models/user_model.dart';
-import 'package:firebase_core/firebase_core.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+// ======================= MODELO DE CONTACTO =======================
+class UserModel {
+  final String userId;
+  final String name;
+  final String photoUrl;
+  final String bio;
+
+  UserModel({
+    required this.userId,
+    required this.name,
+    required this.photoUrl,
+    required this.bio,
+  });
+}
+
+// ======================= INICIO DE LA APP =======================
+void main() {
   runApp(const MyApp());
 }
 
@@ -14,24 +25,69 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SimuladorApp();
-  }
-}
-
-class SimuladorApp extends StatelessWidget {
-  const SimuladorApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Simulador',
-      home: ChatContactoScreen(),
+      title: 'Simulador Chat',
+      home: HomeDashboardScreen(),
     );
   }
 }
 
-// ===================== PANTALLA DE LISTA DE CONTACTOS =====================
+// ======================= HOME =======================
+class HomeDashboardScreen extends StatelessWidget {
+  const HomeDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Fondo
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/images/background_pattern.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Degradado
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.2),
+                  Colors.black.withOpacity(0.5),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                child: const Text("Ir a Chat"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ChatContactoScreen()),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ======================= LISTA DE CONTACTOS =======================
 class ChatContactoScreen extends StatefulWidget {
   const ChatContactoScreen({super.key});
 
@@ -40,137 +96,103 @@ class ChatContactoScreen extends StatefulWidget {
 }
 
 class _ChatContactoScreenState extends State<ChatContactoScreen> {
-  final UserService _userService = UserService();
-  List<UserModel> _contactos = [];
-  bool _cargando = true;
+  late List<UserModel> _contactos;
 
   @override
   void initState() {
     super.initState();
-    _cargarContactos();
+    _contactos = _crearContactosFake();
   }
 
-  Future<void> _cargarContactos() async {
-    try {
-      final usuarios = await _userService.getUsersByRole('provider');
-      setState(() {
-        _contactos = usuarios;
-        _cargando = false;
-      });
-    } catch (e) {
-      print('Error al cargar contactos: $e');
-      setState(() => _cargando = false);
-    }
+  List<UserModel> _crearContactosFake() {
+    return [
+      UserModel(userId: "1", name: "Juan", photoUrl: "", bio: "Cortar pasto"),
+      UserModel(userId: "2", name: "María", photoUrl: "", bio: "Arreglar casa"),
+      UserModel(userId: "3", name: "Pedro", photoUrl: "", bio: "Pintar paredes"),
+      UserModel(userId: "4", name: "Lucía", photoUrl: "", bio: "Mudanzas"),
+      UserModel(userId: "5", name: "Carlos", photoUrl: "", bio: "Reparar computadoras"),
+      UserModel(userId: "6", name: "Ana", photoUrl: "", bio: "Limpieza de casas"),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Image.asset(
-            'manos_locales\assets\images\background_pattern.png',
-            fit: BoxFit.cover,
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Fondo y degradado igual que Home
+          SizedBox.expand(
+            child: Image.asset('assets/images/background_pattern.png', fit: BoxFit.cover),
           ),
-        ),
-        Scaffold(
-          backgroundColor: const Color.fromARGB(94, 33, 86, 244),
-          appBar: AppBar(
-            title: const Text('Chat'),
-            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-            elevation: 0,
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.2),
+                  Colors.black.withOpacity(0.5),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
           ),
-          body: _cargando
-              ? const Center(child: CircularProgressIndicator())
-              : _contactos.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No hay contactos disponibles',
-                        style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _contactos.length,
-                      itemBuilder: (context, index) {
-                        final contacto = _contactos[index];
-                        return Card(
-                          color: const Color(0xFF1B263B).withOpacity(0.8),
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.purple,
-                              backgroundImage: contacto.photoUrl.isNotEmpty
-                                  ? NetworkImage(contacto.photoUrl)
-                                  : null,
-                              child: contacto.photoUrl.isEmpty
-                                  ? const Icon(Icons.person,
-                                      color: Colors.white)
-                                  : null,
-                            ),
-                            title: Text(
-                              contacto.name,
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Text(
-                              contacto.bio.isNotEmpty
-                                  ? contacto.bio
-                                  : 'Sin mensaje',
-                              style: const TextStyle(color: Colors.white),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: contacto.ratingAvg > 0
-                                ? Text(
-                                    '⭐ ${contacto.ratingAvg}',
-                                    style: const TextStyle(
-                                        color:
-                                            Color.fromARGB(179, 255, 255, 255)),
-                                  )
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                const Text(
+                  "Contactos",
+                  style: TextStyle(
+                      color: Colors.lightBlueAccent,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _contactos.length,
+                    itemBuilder: (context, index) {
+                      final contacto = _contactos[index];
+                      return Card(
+                        color: const Color(0xFF1B263B).withOpacity(0.8),
+                        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            child: contacto.photoUrl.isEmpty
+                                ? const Icon(Icons.person, color: Colors.white)
                                 : null,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ChatScreen(userId: contacto.userId),
-                                ),
-                              );
-                            },
                           ),
-                        );
-                      },
-                    ),
-          bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: const Color(0xFF1B263B).withOpacity(0.8),
-            selectedItemColor: const Color.fromARGB(255, 254, 254, 254),
-            unselectedItemColor: Colors.white70,
-            currentIndex: 1,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-              BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.search), label: 'Buscar'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.notifications), label: 'Alertas'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.person), label: 'Perfil'),
-            ],
-            onTap: (index) {
-              // Navegación entre pantallas (a implementar)
-            },
+                          title: Text(contacto.name, style: const TextStyle(color: Colors.white)),
+                          subtitle: Text(contacto.bio,
+                              style: const TextStyle(color: Colors.white70)),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(contact: contacto),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-// ===================== PANTALLA DE CHAT =====================
+// ======================= CHAT INDIVIDUAL =======================
 class ChatScreen extends StatefulWidget {
-  final String userId;
+  final UserModel contact; // contacto seleccionado
 
-  const ChatScreen({super.key, required this.userId});
+  const ChatScreen({super.key, required this.contact});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -178,44 +200,22 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text': 'Hola, cuando podría pasar para hacer el trabajo.',
-      'isMe': false,
-    },
-    {
-      'text': 'Hola, podría ser este martes, la dirección es Mar arabigo 1489.',
-      'isMe': true,
-    },
-  ];
-
-  final UserService _userService = UserService();
-  UserModel? _usuario;
-  bool _cargandoUsuario = true;
+  final List<Map<String, dynamic>> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    _cargarUsuario();
+    // Mensajes iniciales simulando coordinación
+    _messages.addAll([
+      {"text": "Hola, me gustaría contratarte para ${widget.contact.bio.toLowerCase()}.", "isMe": false},
+      {"text": "Hola! Sí, puedo ayudarte. ¿Cuándo quieres hacerlo?", "isMe": true},
+    ]);
   }
 
-  Future<void> _cargarUsuario() async {
-    try {
-      final user = await _userService.getUserById(widget.userId);
-      setState(() {
-        _usuario = user;
-        _cargandoUsuario = false;
-      });
-    } catch (e) {
-      print('Error al obtener usuario: $e');
-      setState(() => _cargandoUsuario = false);
-    }
-  }
-
-  void _sendMessage() {
+  void _send() {
     if (_controller.text.trim().isEmpty) return;
     setState(() {
-      _messages.add({'text': _controller.text.trim(), 'isMe': true});
+      _messages.add({"text": _controller.text.trim(), "isMe": true});
       _controller.clear();
     });
   }
@@ -223,108 +223,104 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF00134E),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF00134E),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: _cargandoUsuario
-            ? const Text('Cargando...', style: TextStyle(color: Colors.white))
-            : Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white24,
-                    backgroundImage: _usuario?.photoUrl.isNotEmpty == true
-                        ? NetworkImage(_usuario!.photoUrl)
-                        : null,
-                    child: _usuario?.photoUrl.isEmpty == true
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _usuario?.name ?? 'Usuario',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                final isMe = message['isMe'] as bool;
-                return Align(
-                  alignment:
-                      isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isMe
-                          ? const Color(0xFF6C63FF).withOpacity(0.2)
-                          : Colors.black,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      message['text'],
-                      style: TextStyle(
-                        color: isMe ? Colors.white70 : Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+          // Fondo igual que Home
+          SizedBox.expand(
+            child: Image.asset('assets/images/background_pattern.png', fit: BoxFit.cover),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF00134E),
-              border: Border(
-                top: BorderSide(color: Colors.white.withOpacity(0.2)),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.2),
+                  Colors.black.withOpacity(0.5),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
-            child: Row(
+          ),
+          SafeArea(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Mensaje',
-                      hintStyle: const TextStyle(
-                          color: Color.fromARGB(137, 234, 232, 232)),
-                      filled: true,
-                      fillColor: const Color(0xFF001B80),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+                // AppBar simulado
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        child: widget.contact.photoUrl.isEmpty
+                            ? const Icon(Icons.person, color: Colors.white)
+                            : null,
                       ),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
+                      const SizedBox(width: 10),
+                      Text(widget.contact.name,
+                          style: const TextStyle(
+                              color: Colors.lightBlueAccent,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.purple),
-                  onPressed: _sendMessage,
-                )
+                const Divider(color: Colors.white54, height: 1),
+                // Chat
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      return Align(
+                        alignment: msg["isMe"] ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: msg["isMe"]
+                                ? Colors.lightBlueAccent.withOpacity(0.6)
+                                : Colors.blueGrey.shade700,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            msg["text"],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // Caja de mensaje
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: "Mensaje...",
+                            hintStyle: const TextStyle(color: Colors.white60),
+                            filled: true,
+                            fillColor: Colors.black26,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onSubmitted: (_) => _send(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send, color: Colors.lightBlueAccent),
+                        onPressed: _send,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
