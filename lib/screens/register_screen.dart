@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/phone_verification_service.dart';
 import '../models/user_model.dart';
+import 'terms_screen.dart'; // asegurate que la ruta sea correcta
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,86 +19,97 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _pass = TextEditingController();
   final _pass2 = TextEditingController();
   final _phone = TextEditingController();
+
   bool _accepted = false;
   bool _loading = false;
 
   final AuthService _authService = AuthService();
   final PhoneVerificationService _phoneService = PhoneVerificationService();
 
+  // Normaliza a +549XXXXXXXXX (Argentina). Ajusta si tu región cambia.
+  String normalizePhone(String input) {
+    String phone = input.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (phone.startsWith('549')) return '+$phone';
+    if (phone.startsWith('54')) return '+549${phone.substring(2)}';
+    if (phone.startsWith('0')) phone = phone.substring(1);
+    if (phone.startsWith('9')) phone = phone.substring(1);
+
+    return '+549$phone';
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_accepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes aceptar los términos')),
-      );
+          const SnackBar(content: Text('Debes aceptar los términos')));
       return;
     }
 
     if (_pass.text != _pass2.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
-      );
+          const SnackBar(content: Text('Las contraseñas no coinciden')));
       return;
     }
 
     setState(() => _loading = true);
 
     try {
-      // ✅ Formatear número
-      String phoneNumber = _phone.text.trim();
-      if (!phoneNumber.startsWith('+54')) {
-        if (phoneNumber.startsWith('0')) phoneNumber = phoneNumber.substring(1);
-        phoneNumber = '+54$phoneNumber';
-      }
+      final formattedPhone = normalizePhone(_phone.text);
 
-      // 🔐 Crear usuario
+      // Crear usuario (Firebase Auth + Firestore en AuthService.signUp)
       final UserModel? newUser = await _authService.signUp(
         email: _email.text.trim(),
         password: _pass.text.trim(),
         name: _name.text.trim(),
-        phone: phoneNumber,
+        phone: formattedPhone,
       );
 
       if (newUser == null) throw 'Error al crear usuario';
 
-      // ✉️ Enviar correo de verificación
-      await _authService.sendEmailVerification();
-
-      // 📲 Enviar SMS de verificación
-      await _phoneService.sendVerificationCode(
-        userId: newUser.userId,
-        phone: phoneNumber,
-      );
-
-      // 💾 Guardar userId localmente
+      // Guardar userId localmente (para que otras pantallas lo consulten)
       final sp = await SharedPreferences.getInstance();
       await sp.setString('userId', newUser.userId);
-      await sp.setBool('loggedIn', false); // aún no logueado
+      await sp.setBool('loggedIn', false); // aún no completo verificación
 
+      // Enviar mail de verificación (Firebase)
+      await _authService.sendEmailVerification();
+
+      // Enviar OTP via Firebase PhoneAuth (espera hasta que codeSent)
+      await _phoneService.sendOTP(formattedPhone);
+
+      // Navegar a pantalla de verificación de email (desde ahí el usuario hará "Ya verifiqué" y pasará a /verify-phone)
       if (!mounted) return;
-
-      // 🚀 Ir a verificación de email (de ahí pasa a teléfono)
       Navigator.pushReplacementNamed(context, '/verify-email');
     } catch (e) {
       String msg = e.toString();
       if (msg.contains('email address is already in use')) {
-        msg =
-            'Este correo ya está registrado. Iniciá sesión o usá otro correo.';
+        msg = 'Este correo ya está registrado.';
       } else if (msg.contains('network')) {
-        msg = 'Error de conexión. Verificá tu internet.';
+        msg = 'Error de conexión.';
       } else if (msg.contains('password')) {
         msg = 'La contraseña es demasiado débil.';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al registrarse: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _pass.dispose();
+    _pass2.dispose();
+    _phone.dispose();
+    super.dispose();
   }
 
   @override
@@ -134,12 +146,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // CAMPOS
                   _buildInput(_name, 'Nombre de usuario'),
                   const SizedBox(height: 12),
                   _buildInput(_email, 'Email',
@@ -151,10 +161,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 12),
                   _buildInput(_phone, 'Número de teléfono',
                       inputType: TextInputType.phone),
-
                   const SizedBox(height: 16),
 
-                  // TÉRMINOS
+                  // Términos
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -166,7 +175,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/terms'),
+                          onTap: () async {
+                            // push para NO recrear el form al volver
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const TermsScreen()),
+                            );
+                          },
                           child: RichText(
                             text: TextSpan(
                               style: const TextStyle(
@@ -177,9 +193,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 TextSpan(
                                   text: 'términos y condiciones',
                                   style: TextStyle(
-                                    color: azulClaro,
-                                    decoration: TextDecoration.underline,
-                                  ),
+                                      color: azulClaro,
+                                      decoration: TextDecoration.underline),
                                 ),
                                 const TextSpan(text: ' de la empresa.'),
                               ],
@@ -192,7 +207,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 20),
 
-                  // BOTÓN
                   _loading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : SizedBox(
@@ -202,24 +216,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: azulPrincipal,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                                  borderRadius: BorderRadius.circular(8)),
                             ),
                             onPressed: _submit,
-                            child: const Text(
-                              'Registrarse',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
+                            child: const Text('Registrarse',
+                                style: TextStyle(color: Colors.white)),
                           ),
                         ),
 
                   const SizedBox(height: 18),
 
-                  // LINK LOGIN
                   GestureDetector(
                     onTap: () =>
                         Navigator.pushReplacementNamed(context, '/login'),
@@ -231,10 +237,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           TextSpan(
                             text: 'Iniciar sesión',
                             style: TextStyle(
-                              color: azulClaro,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
-                            ),
+                                color: azulClaro,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline),
                           ),
                         ],
                       ),
@@ -249,13 +254,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Campo de texto reutilizable
-  Widget _buildInput(
-    TextEditingController controller,
-    String label, {
-    bool obscure = false,
-    TextInputType inputType = TextInputType.text,
-  }) {
+  Widget _buildInput(TextEditingController controller, String label,
+      {bool obscure = false, TextInputType inputType = TextInputType.text}) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
@@ -276,13 +276,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white24),
-        ),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.white24)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.white)),
         filled: true,
         fillColor: Colors.white10,
       ),
