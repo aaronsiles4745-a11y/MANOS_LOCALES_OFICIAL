@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:manos_locales/app.dart';
+
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/service_service.dart';
 import '../models/user_model.dart';
 import '../models/service_model.dart';
+
+
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({Key? key}) : super(key: key);
@@ -73,7 +77,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                         Row(
                           children: [
                             Text(
-                              '¡Hola ${_currentUser?.name.split(' ').first ?? 'Usuario'}!',
+                              '¡Hola ${(_currentUser != null && _currentUser!.name.isNotEmpty)
+                                  ? _currentUser!.name.split(" ").first
+                                  : "Usuario"}!',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 28,

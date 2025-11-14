@@ -3,11 +3,16 @@ import 'package:manos_locales/screens/home_dashboard_screen.dart';
 import 'package:manos_locales/screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_dashboard_screen.dart';
-
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/auth_service.dart';
+import 'app.dart'; // o donde esté tu MaterialApp
 import 'package:manos_locales/services/auth_service.dart';
 import 'package:manos_locales/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+import 'package:manos_locales/app.dart';
+
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();

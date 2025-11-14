@@ -7,13 +7,15 @@ class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Estado actual del usuario
+  // Usuario actual
   User? get currentUser => _auth.currentUser;
 
   // Stream de cambios de autenticación
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // ============== REGISTRO ==============
+  // =====================================================
+  // ===============      REGISTRO      ==================
+  // =====================================================
   Future<UserModel?> signUp({
     required String email,
     required String password,
@@ -22,19 +24,19 @@ class AuthService extends ChangeNotifier {
     String role = 'client',
   }) async {
     try {
-      // 1. Crear usuario en Firebase Auth
+      // Crear usuario en Firebase Auth
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      // 2. Crear documento en Firestore
+      // Crear documento en Firestore
       final user = UserModel(
         userId: userCredential.user!.uid,
         name: name,
         email: email,
         phone: phone,
-        phoneVerified: false, // ← NUEVO: Por defecto no verificado
-        verificationCode: '', // ← NUEVO: Vacío inicialmente
-        verificationCodeExpiry: null, // ← NUEVO: Sin expiración
+        phoneVerified: false,
+        verificationCode: '',
+        verificationCodeExpiry: null,
         role: role,
         createdAt: DateTime.now(),
       );
@@ -50,19 +52,19 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== LOGIN ==============
+  // =====================================================
+  // ===============       LOGIN        ===================
+  // =====================================================
   Future<UserModel?> signIn({
     required String email,
     required String password,
   }) async {
     try {
-      // 1. Login en Firebase Auth
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // 2. Obtener datos del usuario de Firestore
       final userDoc = await _firestore
           .collection('users')
           .doc(userCredential.user!.uid)
@@ -81,7 +83,9 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== LOGOUT ==============
+  // =====================================================
+  // ===============       LOGOUT       ===================
+  // =====================================================
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -91,7 +95,28 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== RESTABLECER CONTRASEÑA ==============
+  // =====================================================
+  // ============ OBTENER DATOS DEL USUARIO ===============
+  // =====================================================
+  Future<UserModel?> getUserData() async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return null;
+
+      final userDoc =
+      await _firestore.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) return null;
+
+      return UserModel.fromFirestore(userDoc);
+    } catch (e) {
+      throw 'Error al obtener usuario: $e';
+    }
+  }
+
+  // =====================================================
+  // ========== RESTABLECER CONTRASEÑA ====================
+  // =====================================================
   Future<void> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -100,7 +125,9 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== VERIFICAR EMAIL ==============
+  // =====================================================
+  // ========== VERIFICAR EMAIL ===========================
+  // =====================================================
   Future<void> sendEmailVerification() async {
     try {
       await currentUser?.sendEmailVerification();
@@ -109,18 +136,19 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== ELIMINAR CUENTA ==============
+  // =====================================================
+  // ========== ELIMINAR CUENTA (SOFT DELETE) =============
+  // =====================================================
   Future<void> deleteAccount() async {
     try {
       final userId = currentUser?.uid;
       if (userId == null) throw 'No hay usuario autenticado';
 
-      // 1. Soft delete en Firestore
       await _firestore.collection('users').doc(userId).update({
         'active': false,
       });
 
-      // 2. Eliminar de Firebase Auth (opcional)
+      // También puedes eliminar de Firebase Auth:
       // await currentUser?.delete();
 
       notifyListeners();
@@ -129,13 +157,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ============== LOGIN DEMO ==============
+  // =====================================================
+  // =============== LOGIN DEMO ===========================
+  // =====================================================
   Future<UserModel?> signInAsDemo() async {
-    // Usuario demo para testing
     return signIn(email: 'demo@manoslocales.com', password: 'demo123456');
   }
 
-  // ============== MANEJO DE ERRORES ==============
+  // =====================================================
+  // =============== MANEJO DE ERRORES ====================
+  // =====================================================
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
