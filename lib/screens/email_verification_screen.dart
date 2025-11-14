@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -14,25 +15,48 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   final AuthService _authService = AuthService();
   bool _isVerifying = false;
   bool _emailVerified = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _checkEmailVerified();
+    // Poll automático cada 5 segundos para no obligar al usuario a pulsar "Ya verifiqué"
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _checkEmailVerified();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkEmailVerified() async {
-    await FirebaseAuth.instance.currentUser?.reload();
-    setState(() {
-      _emailVerified =
+    try {
+      await FirebaseAuth.instance.currentUser?.reload();
+      final verified =
           FirebaseAuth.instance.currentUser?.emailVerified ?? false;
-    });
+      if (mounted) {
+        setState(() => _emailVerified = verified);
+      }
 
-    if (_emailVerified && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Correo verificado correctamente ✅')),
-      );
-      Navigator.pushReplacementNamed(context, '/verify-phone');
+      if (verified && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Correo verificado correctamente ✅')),
+        );
+        // Cancelar polling y navegar a verificación de teléfono
+        _pollTimer?.cancel();
+        Navigator.pushReplacementNamed(context, '/verify-phone');
+      }
+    } catch (e) {
+      // No rompas la UX por errores de reload; sólo loguealo
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error comprobando verificación: $e')),
+        );
+      }
     }
   }
 
@@ -40,17 +64,22 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     setState(() => _isVerifying = true);
     try {
       await _authService.sendEmailVerification();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Correo de verificación enviado. Revisa tu bandeja.'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Correo de verificación enviado. Revisa tu bandeja.'),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     } finally {
-      setState(() => _isVerifying = false);
+      if (mounted) setState(() => _isVerifying = false);
     }
   }
 
