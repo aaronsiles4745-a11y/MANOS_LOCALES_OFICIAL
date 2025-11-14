@@ -7,9 +7,11 @@ class PhoneVerificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // ⚠️ IMPORTANTE: Configurar estas credenciales de Twilio
-  static const String TWILIO_ACCOUNT_SID = 'TU_ACCOUNT_SID'; // Cambiar
-  static const String TWILIO_AUTH_TOKEN = 'TU_AUTH_TOKEN'; // Cambiar
-  static const String TWILIO_PHONE_NUMBER = '+1234567890'; // Tu número Twilio
+  static const String TWILIO_ACCOUNT_SID =
+      'ACccac2d9258f227def106265f8ebc91b7'; // Cambiar
+  static const String TWILIO_AUTH_TOKEN =
+      '6f632264cca705f2d990844b63a4f87f'; // Cambiar
+  static const String TWILIO_PHONE_NUMBER = '+17875926686'; // Tu número Twilio
 
   // ============== ENVIAR CÓDIGO DE VERIFICACIÓN ==============
   Future<void> sendVerificationCode({
