@@ -123,7 +123,8 @@ class ServiceService {
     }
   }
 
-  // FUNCIÓN FALTANTE - AGREGAR A service_service.dart
+  // AGREGAR AL FINAL DE LA CLASE ServiceService
+
   Future<void> updateServiceStatus(String serviceId, String status) async {
     try {
       await _servicesCollection.doc(serviceId).update({
@@ -144,6 +145,33 @@ class ServiceService {
       });
     } catch (e) {
       throw 'Error al completar servicio: $e';
+    }
+  }
+
+  Future<List<ServiceModel>> getServicesWithFilters({
+    String? category,
+    String? locationKeyword,
+    int limit = 20,
+  }) async {
+    try {
+      Query query = _servicesCollection
+          .where('active', isEqualTo: true)
+          .orderBy('createdAt', descending: true);
+
+      if (category != null && category.isNotEmpty) {
+        query = query.where('category', isEqualTo: category);
+      }
+
+      if (locationKeyword != null && locationKeyword.isNotEmpty) {
+        query = query
+            .where('locationText', isGreaterThanOrEqualTo: locationKeyword)
+            .where('locationText', isLessThan: locationKeyword + 'z');
+      }
+
+      final result = await query.limit(limit).get();
+      return result.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      throw 'Error al obtener servicios filtrados: $e';
     }
   }
 }
